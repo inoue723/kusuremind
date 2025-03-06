@@ -4,40 +4,34 @@ import { Platform } from 'react-native';
 import { Medication, Schedule, NotificationTime } from '@/types';
 import { format, parse, isToday, isTomorrow, addDays } from 'date-fns';
 
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
-// Request permissions
-export const registerForPushNotificationsAsync = async () => {
+// Request permissions for local notifications
+export const registerForLocalNotificationsAsync = async () => {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
+      sound: 'notification.wav', // Use custom sound
     });
   }
 
-  if (Constants.platform?.ios) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return;
-    }
+  // Request permission
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
   }
+  
+  if (finalStatus !== 'granted') {
+    console.log('Failed to get permission for local notifications');
+    return false;
+  }
+  
+  console.log('Notification permissions granted');
+  return true;
 };
 
 // Parse time string to get hours and minutes
@@ -51,29 +45,94 @@ export const scheduleNotification = async (
   medication: Medication,
   schedule: Schedule
 ): Promise<string> => {
-  // For now, we'll just return a placeholder identifier
-  // In a real app, we would properly schedule notifications
-  console.log(`Would schedule notification for ${medication.name} at ${schedule.time}`);
-  return `notification-${medication.id}-${schedule.id}`;
+  const { hour, minute } = parseTimeString(schedule.time);
+  
+  // Create a trigger for each day in the schedule
+  const identifiers: string[] = [];
+  
+  for (const day of schedule.days) {
+    // Create a date for the next occurrence of this day of the week
+    const now = new Date();
+    const daysUntilTarget = (day - now.getDay() + 7) % 7;
+    const targetDate = new Date();
+    targetDate.setDate(now.getDate() + daysUntilTarget);
+    targetDate.setHours(hour, minute, 0, 0);
+    
+    // If the time has already passed today, add 7 days
+    if (targetDate <= now) {
+      targetDate.setDate(targetDate.getDate() + 7);
+    }
+    
+    const trigger = {
+      channelId: 'default',
+      date: targetDate,
+      repeats: true,
+    };
+    
+    // Create notification content
+    const content: Notifications.NotificationContentInput = {
+      title: `お薬の時間です`,
+      body: `${medication.name}を服用する時間です`,
+      sound: true,
+      data: {
+        medicationId: medication.id,
+        scheduleId: schedule.id,
+        medicationName: medication.name,
+      },
+    };
+    
+    // Schedule the notification
+    const identifier = await Notifications.scheduleNotificationAsync({
+      content,
+      trigger,
+    });
+    
+    identifiers.push(identifier);
+    console.log(`Scheduled notification for ${medication.name} on day ${day} at ${schedule.time}, ID: ${identifier}`);
+  }
+  
+  // Return the first identifier (we'll use this as a reference)
+  return identifiers[0] || `notification-${medication.id}-${schedule.id}`;
 };
 
 // Schedule all notifications for a medication
 export const scheduleAllNotifications = async (medication: Medication): Promise<void> => {
+  // First cancel any existing notifications for this medication
+  await cancelMedicationNotifications(medication);
+  
+  // Then schedule new notifications for each enabled schedule
+  const notificationIds: string[] = [];
+  
   for (const schedule of medication.schedule) {
     if (schedule.enabled) {
-      await scheduleNotification(medication, schedule);
+      try {
+        const id = await scheduleNotification(medication, schedule);
+        notificationIds.push(id);
+      } catch (error) {
+        console.error(`Failed to schedule notification for ${medication.name}:`, error);
+      }
     }
   }
+  
+  console.log(`Scheduled ${notificationIds.length} notifications for ${medication.name}`);
 };
 
 // Cancel all notifications for a medication
 export const cancelMedicationNotifications = async (medication: Medication): Promise<void> => {
-  const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-  
-  for (const notification of scheduledNotifications) {
-    if (notification.content.data?.medicationId === medication.id) {
-      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+  try {
+    const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+    let cancelCount = 0;
+    
+    for (const notification of scheduledNotifications) {
+      if (notification.content.data?.medicationId === medication.id) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        cancelCount++;
+      }
     }
+    
+    console.log(`Cancelled ${cancelCount} notifications for ${medication.name}`);
+  } catch (error) {
+    console.error(`Error cancelling notifications for ${medication.name}:`, error);
   }
 };
 

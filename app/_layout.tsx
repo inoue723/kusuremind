@@ -1,11 +1,13 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import 'react-native-reanimated';
-import { registerForPushNotificationsAsync } from '@/utils/notifications';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import { registerForLocalNotificationsAsync } from '@/utils/notifications';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -22,11 +24,24 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
+  
+  // Notification response listener ref
+  const notificationListener = useRef<Notifications.Subscription>();
+  const responseListener = useRef<Notifications.Subscription>();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -42,7 +57,37 @@ export default function RootLayout() {
   // Initialize notifications when the app loads
   useEffect(() => {
     if (loaded) {
-      registerForPushNotificationsAsync();
+      // Request permissions for local notifications
+      registerForLocalNotificationsAsync();
+      
+      // Set up notification listeners
+      notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+        console.log('Local notification received:', notification);
+      });
+      
+      // Handle notification response (when user taps on notification)
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data;
+        console.log('Local notification response:', data);
+        
+        // Navigate to medication details if medicationId is provided
+        if (data.medicationId) {
+          router.push({
+            pathname: '/edit-medication',
+            params: { id: data.medicationId }
+          });
+        }
+      });
+      
+      // Clean up listeners on unmount
+      return () => {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(notificationListener.current);
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        }
+      };
     }
   }, [loaded]);
 
