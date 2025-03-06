@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { registerForPushNotificationsAsync } from '@/utils/notifications';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -38,6 +39,13 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  // Initialize notifications when the app loads
+  useEffect(() => {
+    if (loaded) {
+      registerForPushNotificationsAsync();
+    }
+  }, [loaded]);
+
   if (!loaded) {
     return null;
   }
@@ -53,6 +61,8 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="add-medication" options={{ title: '薬を追加' }} />
+        <Stack.Screen name="edit-medication" options={{ title: '薬を編集' }} />
       </Stack>
     </ThemeProvider>
   );
