@@ -202,6 +202,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     fontSize: 16,
+    color: '#000', // Ensure text is always visible
+    backgroundColor: '#fff', // Ensure background is always white
   },
   textArea: {
     height: 80,
@@ -238,6 +240,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     fontSize: 16,
+    color: '#000', // Ensure text is always visible
+    backgroundColor: '#fff', // Ensure background is always white
   },
   daysContainer: {
     marginBottom: 8,
