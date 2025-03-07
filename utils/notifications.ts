@@ -12,7 +12,6 @@ export const registerForLocalNotificationsAsync = async () => {
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
-      sound: 'notification.wav', // Use custom sound
     });
   }
 
@@ -51,24 +50,6 @@ export const scheduleNotification = async (
   const identifiers: string[] = [];
   
   for (const day of schedule.days) {
-    // Create a date for the next occurrence of this day of the week
-    const now = new Date();
-    const daysUntilTarget = (day - now.getDay() + 7) % 7;
-    const targetDate = new Date();
-    targetDate.setDate(now.getDate() + daysUntilTarget);
-    targetDate.setHours(hour, minute, 0, 0);
-    
-    // If the time has already passed today, add 7 days
-    if (targetDate <= now) {
-      targetDate.setDate(targetDate.getDate() + 7);
-    }
-    
-    const trigger = {
-      channelId: 'default',
-      date: targetDate,
-      repeats: true,
-    };
-    
     // Create notification content
     const content: Notifications.NotificationContentInput = {
       title: `お薬の時間です`,
@@ -84,7 +65,12 @@ export const scheduleNotification = async (
     // Schedule the notification
     const identifier = await Notifications.scheduleNotificationAsync({
       content,
-      trigger,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        weekday: day + 1, // 1-7(Sun-Sat)に変換する
+        hour,
+        minute,
+      },
     });
     
     identifiers.push(identifier);
