@@ -2,7 +2,7 @@ export interface Medication {
   id: string;
   name: string;
   description?: string;
-  schedule: Schedule[];
+  schedule: MedicationSchedule[];
   createdAt: number;
   updatedAt: number;
   usageHistories?: UsageHistory[];
@@ -15,7 +15,7 @@ export interface UsageHistory {
   notes?: string;
 }
 
-export interface Schedule {
+export interface MedicationSchedule {
   id: string;
   medicationId: string;
   time: string; // Format: "HH:mm"

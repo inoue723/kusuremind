@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { Medication, Schedule } from '@/types';
+import { Medication, MedicationSchedule } from '@/types';
 import { addMedication, updateMedication } from '@/utils/storage';
 import { scheduleAllNotifications, cancelMedicationNotifications } from '@/utils/notifications';
 import { router } from 'expo-router';
@@ -15,7 +15,7 @@ export function useMedicationForm({ initialMedication, isEditing }: UseMedicatio
   const medicationId = initialMedication?.id || v7();
   const [name, setName] = useState(initialMedication?.name || '');
   const [description, setDescription] = useState(initialMedication?.description || '');
-  const [schedules, setSchedules] = useState<Schedule[]>(
+  const [schedules, setSchedules] = useState<MedicationSchedule[]>(
     initialMedication?.schedule || [
       {
         id: v7(),

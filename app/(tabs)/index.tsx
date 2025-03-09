@@ -3,7 +3,7 @@ import { StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { router, useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Medication, Schedule, UsageHistory } from '@/types';
+import { Medication, MedicationSchedule, UsageHistory } from '@/types';
 import { getMedications, recordMedicationUsage } from '@/utils/storage';
 import { getTodayMedications, formatTime, getDayNames } from '@/utils/notifications';
 import Colors from '@/constants/Colors';
@@ -13,7 +13,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 interface MedicationScheduleItem {
   id: string; // Unique ID combining medication ID and schedule ID
   medication: Medication;
-  schedule: Schedule;
+  schedule: MedicationSchedule;
 }
 
 export default function TodayScreen() {

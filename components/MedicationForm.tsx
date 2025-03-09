@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Schedule } from '@/types';
+import { MedicationSchedule } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Generate hour options starting from 6:00 (6-23, then 0-5)
@@ -28,8 +28,8 @@ export interface MedicationFormProps {
   setName: (name: string) => void;
   description: string;
   setDescription: (description: string) => void;
-  schedules: Schedule[];
-  setSchedules: React.Dispatch<React.SetStateAction<Schedule[]>>;
+  schedules: MedicationSchedule[];
+  setSchedules: React.Dispatch<React.SetStateAction<MedicationSchedule[]>>;
   onSave: () => void;
 }
 
@@ -64,7 +64,7 @@ export function MedicationForm({
     setSchedules(schedules.filter(schedule => schedule.id !== id));
   };
 
-  const handleUpdateSchedule = (id: string, field: keyof Schedule, value: any) => {
+  const handleUpdateSchedule = (id: string, field: keyof MedicationSchedule, value: any) => {
     setSchedules(
       schedules.map(schedule => {
         if (schedule.id === id) {

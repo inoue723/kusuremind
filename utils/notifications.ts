@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { Medication, Schedule, NotificationTime } from '@/types';
+import { Medication, MedicationSchedule, NotificationTime } from '@/types';
 import { format, parse, isToday, isTomorrow, addDays } from 'date-fns';
 
 // Request permissions for local notifications
@@ -42,7 +42,7 @@ export const parseTimeString = (timeString: string): NotificationTime => {
 // Schedule a notification for a medication
 export const scheduleNotification = async (
   medication: Medication,
-  schedule: Schedule
+  schedule: MedicationSchedule
 ): Promise<string> => {
   const { hour, minute } = parseTimeString(schedule.time);
   
