@@ -198,3 +198,71 @@ export const recordMedicationConsumption = async (
     throw error;
   }
 };
+
+export const getMedicationTakingRecord = async (
+  medicationScheduleId: string,
+  scheduledDate: string
+): Promise<MedicationTakingRecord | null> => {
+  try {
+    const record = await db
+      .select()
+      .from(medicationTakingRecords)
+      .where(
+        and(
+          eq(medicationTakingRecords.medicationScheduleId, medicationScheduleId),
+          eq(medicationTakingRecords.scheduledDate, scheduledDate)
+        )
+      );
+
+    if (record.length === 0) {
+      return null;
+    }
+
+    return record[0] as MedicationTakingRecord;
+  } catch (error) {
+    console.error('Error getting medication taking record:', error);
+    return null;
+  }
+};
+
+export const deleteMedicationTakingRecord = async (
+  medicationId: string,
+  medicationScheduleId: string,
+  scheduledDate: string
+): Promise<void> => {
+  try {
+    // Start a transaction
+    await db.transaction(async (tx) => {
+      // Check if medication exists
+      const existingMedication = await tx
+        .select()
+        .from(medications)
+        .where(eq(medications.id, medicationId));
+
+      if (existingMedication.length === 0) {
+        throw new Error('Medication not found');
+      }
+
+      // Delete the record
+      await tx
+        .delete(medicationTakingRecords)
+        .where(
+          and(
+            eq(medicationTakingRecords.medicationScheduleId, medicationScheduleId),
+            eq(medicationTakingRecords.scheduledDate, scheduledDate)
+          )
+        );
+
+      // Update the medication's updatedAt timestamp
+      await tx
+        .update(medications)
+        .set({
+          updatedAt: Date.now(),
+        })
+        .where(eq(medications.id, medicationId));
+    });
+  } catch (error) {
+    console.error('Error deleting medication taking record:', error);
+    throw error;
+  }
+};

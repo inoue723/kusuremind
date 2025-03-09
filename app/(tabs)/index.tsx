@@ -4,7 +4,7 @@ import { Text, View } from '@/components/Themed';
 import { router, useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Medication, MedicationSchedule, MedicationTakingRecord } from '@/types';
-import { getMedications, recordMedicationConsumption } from '@/utils/storage';
+import { getMedications, recordMedicationConsumption, deleteMedicationTakingRecord, getMedicationTakingRecord } from '@/utils/storage';
 import { getTodayMedications, formatTime, getDayNames } from '@/utils/notifications';
 import { format } from 'date-fns';
 import Colors from '@/constants/Colors';
@@ -15,6 +15,7 @@ interface MedicationScheduleItem {
   id: string; // Unique ID combining medication ID and schedule ID
   medication: Medication;
   schedule: MedicationSchedule;
+  hasTakingRecord?: boolean; // Flag to indicate if a taking record exists
 }
 
 export default function TodayScreen() {
@@ -36,20 +37,28 @@ export default function TodayScreen() {
           const items: MedicationScheduleItem[] = [];
           const today = new Date();
           const dayOfWeek = today.getDay();
+          const formattedDate = format(today, 'yyyy-MM-dd');
           
-          todayMeds.forEach(medication => {
+          for (const medication of todayMeds) {
             const todaySchedules = medication.schedule.filter(
               schedule => schedule.enabled && schedule.days.includes(dayOfWeek)
             );
             
-            todaySchedules.forEach(schedule => {
+            for (const schedule of todaySchedules) {
+              // Check if there's a taking record for this schedule today
+              const takingRecord = await getMedicationTakingRecord(
+                schedule.id,
+                formattedDate
+              );
+              
               items.push({
                 id: `${medication.id}-${schedule.id}`,
                 medication,
-                schedule
+                schedule,
+                hasTakingRecord: !!takingRecord
               });
-            });
-          });
+            }
+          }
           
           // Sort by time
           items.sort((a, b) => {
@@ -71,27 +80,43 @@ export default function TodayScreen() {
 
   const handleTakeMedication = async (item: MedicationScheduleItem) => {
     try {
-      const now = Date.now();
       const today = new Date();
       const formattedDate = format(today, 'yyyy-MM-dd');
       
-      // Create a new medication record
-      const medicationRecord: MedicationTakingRecord = {
-        id: `med-record-${now}`, // Generate a unique ID
-        medicationScheduleId: item.schedule.id,
-        scheduledDate: formattedDate,
-        consumedAt: now,
-      };
-      
-      // Record the medication consumption
-      await recordMedicationConsumption(item.medication.id, medicationRecord);
-      
-      // Show success message
-      Alert.alert(
-        '服用記録',
-        `${item.medication.name}を服用しました`,
-        [{ text: 'OK' }]
-      );
+      if (item.hasTakingRecord) {
+        // Delete the existing record
+        await deleteMedicationTakingRecord(
+          item.medication.id,
+          item.schedule.id,
+          formattedDate
+        );
+        
+        // Show success message
+        Alert.alert(
+          '服用記録',
+          `${item.medication.name}の服用記録を取り消しました`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        // Create a new medication record
+        const now = Date.now();
+        const medicationRecord: MedicationTakingRecord = {
+          id: `med-record-${now}`, // Generate a unique ID
+          medicationScheduleId: item.schedule.id,
+          scheduledDate: formattedDate,
+          consumedAt: now,
+        };
+        
+        // Record the medication consumption
+        await recordMedicationConsumption(item.medication.id, medicationRecord);
+        
+        // Show success message
+        Alert.alert(
+          '服用記録',
+          `${item.medication.name}を服用しました`,
+          [{ text: 'OK' }]
+        );
+      }
       
       // Refresh the medication list
       const allMedications = await getMedications();
@@ -101,19 +126,26 @@ export default function TodayScreen() {
       const items: MedicationScheduleItem[] = [];
       const dayOfWeek = today.getDay();
       
-      todayMeds.forEach(medication => {
+      for (const medication of todayMeds) {
         const todaySchedules = medication.schedule.filter(
           schedule => schedule.enabled && schedule.days.includes(dayOfWeek)
         );
         
-        todaySchedules.forEach(schedule => {
+        for (const schedule of todaySchedules) {
+          // Check if there's a taking record for this schedule today
+          const takingRecord = await getMedicationTakingRecord(
+            schedule.id,
+            formattedDate
+          );
+          
           items.push({
             id: `${medication.id}-${schedule.id}`,
             medication,
-            schedule
+            schedule,
+            hasTakingRecord: !!takingRecord
           });
-        });
-      });
+        }
+      }
       
       // Sort by time
       items.sort((a, b) => {
@@ -122,12 +154,25 @@ export default function TodayScreen() {
       
       setMedicationItems(items);
     } catch (error) {
-      console.error('Error recording medication usage:', error);
-      Alert.alert('エラー', '服用記録の保存に失敗しました');
+      console.error('Error handling medication record:', error);
+      Alert.alert('エラー', '服用記録の処理に失敗しました');
     }
   };
 
   const renderItem = ({ item }: { item: MedicationScheduleItem }) => {
+    // Determine button style and text based on whether a record exists
+    const buttonStyle = item.hasTakingRecord
+      ? [styles.takeButton, styles.cancelButton]
+      : styles.takeButton;
+    
+    const buttonText = item.hasTakingRecord
+      ? "服用を取り消し"
+      : "服用する";
+    
+    const buttonIcon = item.hasTakingRecord
+      ? "times-circle"
+      : "check-circle";
+    
     return (
       <View style={styles.medicationItem}>
         <View style={styles.medicationHeader}>
@@ -155,11 +200,11 @@ export default function TodayScreen() {
         </View>
         
         <TouchableOpacity
-          style={styles.takeButton}
+          style={buttonStyle}
           onPress={() => handleTakeMedication(item)}
         >
-          <FontAwesome name="check-circle" size={18} color="white" style={styles.takeButtonIcon} />
-          <Text style={styles.takeButtonText}>服用する</Text>
+          <FontAwesome name={buttonIcon} size={18} color="white" style={styles.takeButtonIcon} />
+          <Text style={styles.takeButtonText}>{buttonText}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -310,5 +355,8 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  cancelButton: {
+    backgroundColor: '#F44336', // Red color for the cancel button
   },
 });
