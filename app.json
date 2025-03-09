@@ -39,7 +39,8 @@
             "./assets/sounds/notification.wav"
           ]
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true
