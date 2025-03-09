@@ -1,11 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Medication, Schedule } from '@/types';
 import { getMedications, updateMedication } from '@/utils/storage';
 import { scheduleAllNotifications, cancelMedicationNotifications } from '@/utils/notifications';
+
+// Generate hour options starting from 6:00 (6-23, then 0-5)
+const HOUR_OPTIONS = [
+  ...Array.from({ length: 18 }, (_, i) => {
+    const hour = (i + 6).toString().padStart(2, '0');
+    return { label: `${hour}`, value: hour };
+  }),
+  ...Array.from({ length: 6 }, (_, i) => {
+    const hour = i.toString().padStart(2, '0');
+    return { label: `${hour}`, value: hour };
+  })
+];
+
+// Generate minute options (0-50, step 10)
+const MINUTE_OPTIONS = Array.from({ length: 6 }, (_, i) => {
+  const minute = (i * 10).toString().padStart(2, '0');
+  return { label: `${minute}`, value: minute };
+});
 
 export default function EditMedicationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -173,13 +191,87 @@ export default function EditMedicationScreen() {
 
             <View style={styles.timeContainer}>
               <Text style={styles.label}>時間</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={schedule.time}
-                onChangeText={(value) => handleUpdateSchedule(schedule.id, 'time', value)}
-                placeholder="HH:MM"
-                keyboardType="numbers-and-punctuation"
-              />
+              <View style={styles.timeSelectionContainer}>
+                {/* Hour selection */}
+                <View style={styles.timeSelectionSection}>
+                  <Text style={styles.timeSelectionLabel}>時</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.timeOptionsContainer}
+                  >
+                    {HOUR_OPTIONS.map((option) => {
+                      const currentHour = schedule.time.split(':')[0];
+                      return (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[
+                            styles.timeOption,
+                            currentHour === option.value && styles.timeOptionSelected,
+                          ]}
+                          onPress={() => {
+                            const currentMinute = schedule.time.split(':')[1];
+                            handleUpdateSchedule(
+                              schedule.id,
+                              'time',
+                              `${option.value}:${currentMinute}`
+                            );
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.timeOptionText,
+                              currentHour === option.value && styles.timeOptionTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* Minute selection */}
+                <View style={styles.timeSelectionSection}>
+                  <Text style={styles.timeSelectionLabel}>分</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.timeOptionsContainer}
+                  >
+                    {MINUTE_OPTIONS.map((option) => {
+                      const currentMinute = schedule.time.split(':')[1];
+                      return (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[
+                            styles.timeOption,
+                            currentMinute === option.value && styles.timeOptionSelected,
+                          ]}
+                          onPress={() => {
+                            const currentHour = schedule.time.split(':')[0];
+                            handleUpdateSchedule(
+                              schedule.id,
+                              'time',
+                              `${currentHour}:${option.value}`
+                            );
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.timeOptionText,
+                              currentMinute === option.value && styles.timeOptionTextSelected,
+                            ]}
+                          >
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              </View>
             </View>
 
             <View style={styles.daysContainer}>
@@ -278,14 +370,39 @@ const styles = StyleSheet.create({
   timeContainer: {
     marginBottom: 16,
   },
-  timeInput: {
+  timeSelectionContainer: {
+    marginBottom: 8,
+  },
+  timeSelectionSection: {
+    marginBottom: 12,
+  },
+  timeSelectionLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  timeOptionsContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  timeOption: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
-    fontSize: 16,
-    color: '#000', // Ensure text is always visible
-    backgroundColor: '#fff', // Ensure background is always white
+    marginRight: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  timeOptionSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  timeOptionText: {
+    fontSize: 14,
+  },
+  timeOptionTextSelected: {
+    color: 'white',
   },
   daysContainer: {
     marginBottom: 8,
