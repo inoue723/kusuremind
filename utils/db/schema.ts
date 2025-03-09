@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Medications table
 export const medications = sqliteTable('medications', {
@@ -22,16 +22,16 @@ export const medicationSchedules = sqliteTable('medication_schedules', {
 
 // Medication taking records table
 export const medicationTakingRecords = sqliteTable('medication_taking_records', {
-  id: text('id').primaryKey(),
-  medicationId: text('medication_id')
-    .notNull()
-    .references(() => medications.id, { onDelete: 'cascade' }),
   medicationScheduleId: text('medication_schedule_id')
     .notNull()
     .references(() => medicationSchedules.id, { onDelete: 'cascade' }),
-  scheduledDate: text('scheduled_date').notNull(), // Format: "YYYY-MM-DD"
+  scheduledDate: text('scheduled_date').notNull(),
   consumedAt: integer('consumed_at').notNull(),
-});
+},
+  (table) => [
+    primaryKey({ columns: [table.medicationScheduleId, table.scheduledDate] }),
+  ]
+);
 
 // Types for the database schema
 export type Medication = typeof medications.$inferSelect;

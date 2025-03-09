@@ -12,12 +12,6 @@ const convertDbMedicationToAppMedication = async (
     .from(medicationSchedules)
     .where(eq(medicationSchedules.medicationId, dbMedication.id));
 
-  // Get records for this medication
-  const dbRecords = await db
-    .select()
-    .from(medicationTakingRecords)
-    .where(eq(medicationTakingRecords.medicationId, dbMedication.id));
-
   // Convert schedules to app format
   const schedules: MedicationSchedule[] = dbSchedules.map((schedule) => ({
     id: schedule.id,
@@ -25,14 +19,6 @@ const convertDbMedicationToAppMedication = async (
     time: schedule.time,
     days: JSON.parse(schedule.days),
     enabled: schedule.enabled,
-  }));
-
-  // Convert records to app format
-  const records: MedicationTakingRecord[] = dbRecords.map((record) => ({
-    id: record.id,
-    medicationScheduleId: record.medicationScheduleId,
-    scheduledDate: record.scheduledDate,
-    consumedAt: record.consumedAt,
   }));
 
   // Return the medication with schedules and records
@@ -43,7 +29,6 @@ const convertDbMedicationToAppMedication = async (
     schedule: schedules,
     createdAt: dbMedication.createdAt,
     updatedAt: dbMedication.updatedAt,
-    medicationRecords: records,
   };
 };
 
@@ -107,8 +92,6 @@ export const addMedication = async (medication: Medication): Promise<void> => {
       if (medication.medicationRecords && medication.medicationRecords.length > 0) {
         for (const record of medication.medicationRecords) {
           await tx.insert(medicationTakingRecords).values({
-            id: record.id,
-            medicationId: medication.id,
             medicationScheduleId: record.medicationScheduleId,
             scheduledDate: record.scheduledDate,
             consumedAt: record.consumedAt,
@@ -197,8 +180,6 @@ export const recordMedicationConsumption = async (
 
       // Insert the record
       await tx.insert(medicationTakingRecords).values({
-        id: medicationRecord.id,
-        medicationId: medicationId,
         medicationScheduleId: medicationRecord.medicationScheduleId,
         scheduledDate: medicationRecord.scheduledDate,
         consumedAt: medicationRecord.consumedAt,
@@ -215,28 +196,5 @@ export const recordMedicationConsumption = async (
   } catch (error) {
     console.error('Error recording medication consumption:', error);
     throw error;
-  }
-};
-
-export const getMedicationRecords = async (
-  medicationId: string
-): Promise<MedicationTakingRecord[]> => {
-  try {
-    // Get records for this medication
-    const dbRecords = await db
-      .select()
-      .from(medicationTakingRecords)
-      .where(eq(medicationTakingRecords.medicationId, medicationId));
-
-    // Convert records to app format
-    return dbRecords.map((record) => ({
-      id: record.id,
-      medicationScheduleId: record.medicationScheduleId,
-      scheduledDate: record.scheduledDate,
-      consumedAt: record.consumedAt,
-    }));
-  } catch (error) {
-    console.error('Error getting medication records:', error);
-    return [];
   }
 };
