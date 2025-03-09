@@ -31,20 +31,6 @@ export default function TabLayout() {
         options={{
           title: '今日の薬',
           tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
-          headerRight: () => (
-            <Link href="/add-medication" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="plus-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
         }}
       />
       <Tabs.Screen

@@ -112,12 +112,21 @@ export default function MedicationsScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
-          data={medications}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
+        <>
+          <FlatList
+            data={medications}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+          />
+          <TouchableOpacity
+            style={styles.floatingAddButton}
+            onPress={() => router.push('/add-medication')}
+          >
+            <FontAwesome name="plus" size={24} color="white" />
+            <Text style={styles.floatingAddButtonText}>薬を追加</Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -129,6 +138,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 80, // Add padding to avoid content being hidden behind the floating button
   },
   medicationItem: {
     // Using Themed.View for background color
@@ -198,5 +208,27 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  floatingAddButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#007AFF',
+    borderRadius: 30,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  floatingAddButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
