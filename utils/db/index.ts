@@ -3,7 +3,7 @@ import { openDatabaseSync } from 'expo-sqlite';
 import * as schema from './schema';
 
 // Open the SQLite database
-const expoSqliteDb = openDatabaseSync('kusuremind.db');
+const expoSqliteDb = openDatabaseSync('db.db');
 
 // Create the drizzle database instance
 export const db = drizzle(expoSqliteDb, { schema });

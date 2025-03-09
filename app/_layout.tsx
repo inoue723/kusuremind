@@ -9,9 +9,13 @@ import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
 import { Platform, StatusBar } from 'react-native';
 import { registerForLocalNotificationsAsync } from '@/utils/notifications';
+import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
+import migrations from '../drizzle/migrations';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { db } from '@/utils/db';
+import { Text, View } from '@/components/Themed';
 
 // Create custom themes
 const CustomDarkTheme = {
@@ -101,6 +105,23 @@ export default function RootLayout() {
       };
     }
   }, [loaded]);
+
+  const { success, error: dbErr } = useMigrations(db, migrations);
+  if (dbErr) {
+    return (
+      <View>
+        <Text>Migration error: {dbErr.message}</Text>
+      </View>
+    );
+  }
+
+  if (!success) {
+    return (
+      <View>
+        <Text>Migration is in progress...</Text>
+      </View>
+    );
+  }
 
   if (!loaded) {
     return null;
