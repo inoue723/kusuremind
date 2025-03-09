@@ -3,9 +3,10 @@ import { StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { router, useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Medication, MedicationSchedule, UsageHistory } from '@/types';
-import { getMedications, recordMedicationUsage } from '@/utils/storage';
+import { Medication, MedicationSchedule, MedicationTakingRecord } from '@/types';
+import { getMedications, recordMedicationConsumption } from '@/utils/storage';
 import { getTodayMedications, formatTime, getDayNames } from '@/utils/notifications';
+import { format } from 'date-fns';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -70,15 +71,20 @@ export default function TodayScreen() {
 
   const handleTakeMedication = async (item: MedicationScheduleItem) => {
     try {
-      // Create a new usage history record
-      const usageRecord: UsageHistory = {
-        id: Date.now().toString(), // Generate a unique ID
-        timestamp: Date.now(),
-        scheduleId: item.schedule.id,
+      const now = Date.now();
+      const today = new Date();
+      const formattedDate = format(today, 'yyyy-MM-dd');
+      
+      // Create a new medication record
+      const medicationRecord: MedicationTakingRecord = {
+        id: `med-record-${now}`, // Generate a unique ID
+        medicationScheduleId: item.schedule.id,
+        scheduledDate: formattedDate,
+        consumedAt: now,
       };
       
-      // Record the medication usage
-      await recordMedicationUsage(item.medication.id, usageRecord);
+      // Record the medication consumption
+      await recordMedicationConsumption(item.medication.id, medicationRecord);
       
       // Show success message
       Alert.alert(
@@ -93,7 +99,6 @@ export default function TodayScreen() {
       
       // Recreate the medication items
       const items: MedicationScheduleItem[] = [];
-      const today = new Date();
       const dayOfWeek = today.getDay();
       
       todayMeds.forEach(medication => {

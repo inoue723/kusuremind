@@ -5,14 +5,14 @@ export interface Medication {
   schedule: MedicationSchedule[];
   createdAt: number;
   updatedAt: number;
-  usageHistories?: UsageHistory[];
+  medicationRecords?: MedicationTakingRecord[];
 }
 
-export interface UsageHistory {
+export interface MedicationTakingRecord {
   id: string;
-  timestamp: number;
-  scheduleId: string;
-  notes?: string;
+  medicationScheduleId: string;
+  scheduledDate: string; // Format: "YYYY-MM-DD"
+  consumedAt: number; // Timestamp when the medication was actually taken
 }
 
 export interface MedicationSchedule {

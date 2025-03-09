@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Medication, UsageHistory } from '@/types';
+import { Medication, MedicationTakingRecord } from '@/types';
 
 const STORAGE_KEY = 'MEDICATIONS';
 
@@ -61,22 +61,22 @@ export const deleteMedication = async (id: string): Promise<void> => {
   }
 };
 
-export const recordMedicationUsage = async (
+export const recordMedicationConsumption = async (
   medicationId: string,
-  usageRecord: UsageHistory
+  medicationRecord: MedicationTakingRecord
 ): Promise<void> => {
   try {
     const medications = await getMedications();
     const index = medications.findIndex(med => med.id === medicationId);
     
     if (index !== -1) {
-      // Initialize usageHistory array if it doesn't exist
-      if (!medications[index].usageHistories) {
-        medications[index].usageHistories = [];
+      // Initialize medicationRecords array if it doesn't exist
+      if (!medications[index].medicationRecords) {
+        medications[index].medicationRecords = [];
       }
       
-      // Add the new usage record
-      medications[index].usageHistories!.push(usageRecord);
+      // Add the new medication record
+      medications[index].medicationRecords!.push(medicationRecord);
       
       // Update the medication's updatedAt timestamp
       medications[index].updatedAt = Date.now();
@@ -86,25 +86,25 @@ export const recordMedicationUsage = async (
       throw new Error('Medication not found');
     }
   } catch (error) {
-    console.error('Error recording medication usage:', error);
+    console.error('Error recording medication consumption:', error);
     throw error;
   }
 };
 
-export const getMedicationUsageHistory = async (
+export const getMedicationRecords = async (
   medicationId: string
-): Promise<UsageHistory[]> => {
+): Promise<MedicationTakingRecord[]> => {
   try {
     const medications = await getMedications();
     const medication = medications.find(med => med.id === medicationId);
     
     if (medication) {
-      return medication.usageHistories || [];
+      return medication.medicationRecords || [];
     } else {
       throw new Error('Medication not found');
     }
   } catch (error) {
-    console.error('Error getting medication usage history:', error);
+    console.error('Error getting medication records:', error);
     return [];
   }
 };
