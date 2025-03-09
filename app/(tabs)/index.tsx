@@ -3,8 +3,8 @@ import { StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { router, useFocusEffect } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Medication, Schedule } from '@/types';
-import { getMedications } from '@/utils/storage';
+import { Medication, Schedule, UsageHistory } from '@/types';
+import { getMedications, recordMedicationUsage } from '@/utils/storage';
 import { getTodayMedications, formatTime, getDayNames } from '@/utils/notifications';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -68,6 +68,60 @@ export default function TodayScreen() {
     }, [])
   );
 
+  const handleTakeMedication = async (item: MedicationScheduleItem) => {
+    try {
+      // Create a new usage history record
+      const usageRecord: UsageHistory = {
+        id: Date.now().toString(), // Generate a unique ID
+        timestamp: Date.now(),
+        scheduleId: item.schedule.id,
+      };
+      
+      // Record the medication usage
+      await recordMedicationUsage(item.medication.id, usageRecord);
+      
+      // Show success message
+      Alert.alert(
+        '服用記録',
+        `${item.medication.name}を服用しました`,
+        [{ text: 'OK' }]
+      );
+      
+      // Refresh the medication list
+      const allMedications = await getMedications();
+      const todayMeds = getTodayMedications(allMedications);
+      
+      // Recreate the medication items
+      const items: MedicationScheduleItem[] = [];
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      
+      todayMeds.forEach(medication => {
+        const todaySchedules = medication.schedule.filter(
+          schedule => schedule.enabled && schedule.days.includes(dayOfWeek)
+        );
+        
+        todaySchedules.forEach(schedule => {
+          items.push({
+            id: `${medication.id}-${schedule.id}`,
+            medication,
+            schedule
+          });
+        });
+      });
+      
+      // Sort by time
+      items.sort((a, b) => {
+        return a.schedule.time.localeCompare(b.schedule.time);
+      });
+      
+      setMedicationItems(items);
+    } catch (error) {
+      console.error('Error recording medication usage:', error);
+      Alert.alert('エラー', '服用記録の保存に失敗しました');
+    }
+  };
+
   const renderItem = ({ item }: { item: MedicationScheduleItem }) => {
     return (
       <View style={styles.medicationItem}>
@@ -94,6 +148,14 @@ export default function TodayScreen() {
             <Text style={styles.timeText}>{formatTime(item.schedule.time)}</Text>
           </View>
         </View>
+        
+        <TouchableOpacity
+          style={styles.takeButton}
+          onPress={() => handleTakeMedication(item)}
+        >
+          <FontAwesome name="check-circle" size={18} color="white" style={styles.takeButtonIcon} />
+          <Text style={styles.takeButtonText}>服用する</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -222,6 +284,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  takeButton: {
+    backgroundColor: '#4CAF50', // Green color for the take medication button
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  takeButtonIcon: {
+    marginRight: 8,
+  },
+  takeButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
