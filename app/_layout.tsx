@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
 import 'react-native-reanimated';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import { registerForLocalNotificationsAsync } from '@/utils/notifications';
 
 import Colors from '@/constants/Colors';
@@ -110,9 +110,14 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const backgroundColor = Colors[colorScheme ?? 'light'].background;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : DefaultTheme}>
+      <StatusBar
+        backgroundColor={backgroundColor}
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+      />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
