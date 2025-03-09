@@ -6,10 +6,14 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Medication } from '@/types';
 import { getMedications, deleteMedication } from '@/utils/storage';
 import { formatTime, getDayNames, cancelMedicationNotifications } from '@/utils/notifications';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
 
 export default function MedicationsScreen() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [loading, setLoading] = useState(true);
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
 
   // Load medications when the screen comes into focus
   useFocusEffect(
@@ -127,7 +131,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   medicationItem: {
-    backgroundColor: '#fff',
+    // Using Themed.View for background color
     borderRadius: 8,
     padding: 16,
     marginBottom: 16,

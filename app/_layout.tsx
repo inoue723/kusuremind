@@ -9,7 +9,17 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { registerForLocalNotificationsAsync } from '@/utils/notifications';
 
+import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+
+// Create custom themes
+const CustomDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+  },
+};
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -102,7 +112,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
