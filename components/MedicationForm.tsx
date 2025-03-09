@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, View as RNV
 import { Text, View } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Schedule } from '@/types';
+import { v4 as uuidv4 } from 'uuid';
 
 // Generate hour options starting from 6:00 (6-23, then 0-5)
 export const HOUR_OPTIONS = [
@@ -42,10 +43,16 @@ export function MedicationForm({
   onSave
 }: MedicationFormProps) {
   const handleAddSchedule = () => {
+    // Get medicationId from the first schedule if available, otherwise use a temporary ID
+    const medicationId = schedules.length > 0
+      ? schedules[0].medicationId
+      : uuidv4();
+      
     setSchedules([
       ...schedules,
       {
-        id: Date.now().toString(),
+        id: uuidv4(),
+        medicationId,
         time: '09:00',
         days: [0, 1, 2, 3, 4, 5, 6], // All days by default
         enabled: true,

@@ -17,6 +17,7 @@ export interface UsageHistory {
 
 export interface Schedule {
   id: string;
+  medicationId: string;
   time: string; // Format: "HH:mm"
   days: number[]; // 0-6 (Sunday-Saturday)
   enabled: boolean;

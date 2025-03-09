@@ -4,6 +4,7 @@ import { Medication, Schedule } from '@/types';
 import { addMedication, updateMedication } from '@/utils/storage';
 import { scheduleAllNotifications, cancelMedicationNotifications } from '@/utils/notifications';
 import { router } from 'expo-router';
+import { v7 } from 'uuid';
 
 interface UseMedicationFormProps {
   initialMedication?: Medication;
@@ -11,12 +12,14 @@ interface UseMedicationFormProps {
 }
 
 export function useMedicationForm({ initialMedication, isEditing }: UseMedicationFormProps) {
+  const medicationId = initialMedication?.id || v7();
   const [name, setName] = useState(initialMedication?.name || '');
   const [description, setDescription] = useState(initialMedication?.description || '');
   const [schedules, setSchedules] = useState<Schedule[]>(
     initialMedication?.schedule || [
       {
-        id: Date.now().toString(),
+        id: v7(),
+        medicationId,
         time: '09:00',
         days: [0, 1, 2, 3, 4, 5, 6], // All days by default
         enabled: true,
@@ -61,12 +64,17 @@ export function useMedicationForm({ initialMedication, isEditing }: UseMedicatio
           { text: 'OK', onPress: () => router.back() }
         ]);
       } else {
-        // Add new medication
+        // Update schedules with the actual medication ID
+        const updatedSchedules = schedules.map(schedule => ({
+          ...schedule,
+          medicationId,
+        }));
+        
         const newMedication: Medication = {
-          id: Date.now().toString(),
+          id: medicationId,
           name,
           description: description.trim() || undefined,
-          schedule: schedules,
+          schedule: updatedSchedules,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
